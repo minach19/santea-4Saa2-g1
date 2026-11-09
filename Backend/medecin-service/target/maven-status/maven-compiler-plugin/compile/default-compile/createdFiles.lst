@@ -1,0 +1,4 @@
+com\santea\medecin\MedecinApplication.class
+com\santea\medecin\MedecinController.class
+com\santea\medecin\Medecin.class
+com\santea\medecin\MedecinRepository.class

@@ -1,0 +1,41 @@
+server:
+  port: ${SERVER_PORT:8080}
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: patients
+          uri: ${PATIENT_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/patients/**
+        - id: medecins
+          uri: ${MEDECIN_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/medecins/**
+        - id: pharmacies
+          uri: ${PHARMACY_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/pharmacies/**
+        - id: pharmaciens
+          uri: ${PHARMACY_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/pharmaciens/**
+        - id: admin-users
+          uri: ${ADMIN_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/v1/admin-users/**
+        - id: nutritionnistes
+          uri: ${NUTRITION_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/v1/nutritionnistes/**
+        - id: sports-coaches
+          uri: ${COACH_SERVICE_URL:http://localhost:8086}
+          predicates:
+            - Path=/api/v1/sports-coaches/**
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

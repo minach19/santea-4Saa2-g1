@@ -1,0 +1,18 @@
+server:
+  port: ${SERVER_PORT:8083}
+spring:
+  application:
+    name: pharmacy-service
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5435/santea_pharmacies}
+    username: ${DATABASE_USER:santea}
+    password: ${DATABASE_PASSWORD:santea_dev}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:santea}
+    password: ${RABBITMQ_PASSWORD:santea_dev}

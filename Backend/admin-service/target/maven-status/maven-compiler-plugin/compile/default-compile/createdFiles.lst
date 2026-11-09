@@ -1,0 +1,5 @@
+com\santea\admin\AdminSequence.class
+com\santea\admin\AdminUserApplication.class
+com\santea\admin\AdminUserRepository.class
+com\santea\admin\AdminUser.class
+com\santea\admin\AdminUserController.class

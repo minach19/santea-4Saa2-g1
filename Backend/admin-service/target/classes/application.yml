@@ -1,0 +1,13 @@
+server:
+  port: ${SERVER_PORT:8084}
+spring:
+  application:
+    name: admin-service
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/santea_admin}
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:santea}
+    password: ${RABBITMQ_PASSWORD:santea_dev}

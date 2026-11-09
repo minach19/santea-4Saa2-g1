@@ -1,0 +1,4 @@
+com\santea\patient\PatientRepository.class
+com\santea\patient\Patient.class
+com\santea\patient\PatientApplication.class
+com\santea\patient\PatientController.class

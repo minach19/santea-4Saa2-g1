@@ -1,0 +1,29 @@
+server:
+  port: ${SERVER_PORT:8084}
+spring:
+  application:
+    name: admin-service
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/santea_admin}
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:santea}
+    password: ${RABBITMQ_PASSWORD:santea_dev}
+santea:
+  security:
+    jwt:
+      secret: ${SANTEA_SECURITY_JWT_SECRET:}
+  bootstrap-admin:
+    username: ${ADMIN_BOOTSTRAP_USERNAME:}
+    email: ${ADMIN_BOOTSTRAP_EMAIL:}
+    password: ${ADMIN_BOOTSTRAP_PASSWORD:}
+  user-directory:
+    services:
+      patient: ${PATIENT_SERVICE_URL:http://localhost:8081}
+      medecin: ${MEDECIN_SERVICE_URL:http://localhost:8082}
+      pharmacien: ${PHARMACY_SERVICE_URL:http://localhost:8083}
+      nutritionniste: ${NUTRITION_SERVICE_URL:http://localhost:8085}
+      coach: ${COACH_SERVICE_URL:http://localhost:8086}
+      admin: ${ADMIN_SERVICE_URL:http://localhost:8084}

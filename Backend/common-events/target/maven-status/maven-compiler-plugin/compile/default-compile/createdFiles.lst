@@ -1,0 +1,3 @@
+com\santea\shared\events\RabbitEventsConfiguration.class
+com\santea\shared\events\DomainEvent.class
+com\santea\shared\events\RabbitEventPublisher.class

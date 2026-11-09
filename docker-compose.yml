@@ -1,0 +1,279 @@
+services:
+  patient-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: santea_patients
+      POSTGRES_USER: santea
+      POSTGRES_PASSWORD: santea_dev
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - patient-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U santea -d santea_patients"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  medecin-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: santea_medecins
+      POSTGRES_USER: santea
+      POSTGRES_PASSWORD: santea_dev
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - medecin-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U santea -d santea_medecins"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  pharmacy-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: santea_pharmacies
+      POSTGRES_USER: santea
+      POSTGRES_PASSWORD: santea_dev
+    ports:
+      - "127.0.0.1:5435:5432"
+    volumes:
+      - pharmacy-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U santea -d santea_pharmacies"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  nutrition-db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: santea_nutrition
+      MYSQL_USER: santea
+      MYSQL_PASSWORD: santea_dev
+      MYSQL_ROOT_PASSWORD: devroot
+    ports:
+      - "127.0.0.1:3307:3306"
+    volumes:
+      - nutrition-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -pdevroot --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  coach-db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: santea_coach
+      MYSQL_USER: santea
+      MYSQL_PASSWORD: santea_dev
+      MYSQL_ROOT_PASSWORD: devroot
+    ports:
+      - "127.0.0.1:3308:3306"
+    volumes:
+      - coach-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -pdevroot --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  admin-db:
+    image: mongo:8
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: santea
+      MONGO_INITDB_ROOT_PASSWORD: santea_dev
+      MONGO_INITDB_DATABASE: santea_admin
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - admin-db-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    environment:
+      RABBITMQ_DEFAULT_USER: santea
+      RABBITMQ_DEFAULT_PASS: santea_dev
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  patient-service:
+    build:
+      context: .
+      args:
+        SERVICE_MODULE: patient-service
+    environment:
+      SANTEA_SECURITY_JWT_SECRET: ${SANTEA_SECURITY_JWT_SECRET:?Définis SANTEA_SECURITY_JWT_SECRET avant de démarrer}
+      DATABASE_URL: jdbc:postgresql://patient-db:5432/santea_patients
+      DATABASE_USER: santea
+      DATABASE_PASSWORD: santea_dev
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: santea
+      RABBITMQ_PASSWORD: santea_dev
+    depends_on:
+      patient-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  medecin-service:
+    build:
+      context: .
+      args:
+        SERVICE_MODULE: medecin-service
+    environment:
+      SANTEA_SECURITY_JWT_SECRET: ${SANTEA_SECURITY_JWT_SECRET:?Définis SANTEA_SECURITY_JWT_SECRET avant de démarrer}
+      DATABASE_URL: jdbc:postgresql://medecin-db:5432/santea_medecins
+      DATABASE_USER: santea
+      DATABASE_PASSWORD: santea_dev
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: santea
+      RABBITMQ_PASSWORD: santea_dev
+    depends_on:
+      medecin-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  pharmacy-service:
+    build:
+      context: .
+      args:
+        SERVICE_MODULE: pharmacy-service
+    environment:
+      SANTEA_SECURITY_JWT_SECRET: ${SANTEA_SECURITY_JWT_SECRET:?Définis SANTEA_SECURITY_JWT_SECRET avant de démarrer}
+      DATABASE_URL: jdbc:postgresql://pharmacy-db:5432/santea_pharmacies
+      DATABASE_USER: santea
+      DATABASE_PASSWORD: santea_dev
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: santea
+      RABBITMQ_PASSWORD: santea_dev
+    depends_on:
+      pharmacy-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  admin-service:
+    build:
+      context: .
+      args:
+        SERVICE_MODULE: admin-service
+    environment:
+      SANTEA_SECURITY_JWT_SECRET: ${SANTEA_SECURITY_JWT_SECRET:?Définis SANTEA_SECURITY_JWT_SECRET avant de démarrer}
+      ADMIN_BOOTSTRAP_USERNAME: ${ADMIN_BOOTSTRAP_USERNAME:-}
+      ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-}
+      ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-}
+      PATIENT_SERVICE_URL: http://patient-service:8081
+      MEDECIN_SERVICE_URL: http://medecin-service:8082
+      PHARMACY_SERVICE_URL: http://pharmacy-service:8083
+      NUTRITION_SERVICE_URL: http://nutrition-service:8085
+      COACH_SERVICE_URL: http://coach-service:8086
+      ADMIN_SERVICE_URL: http://admin-service:8084
+      MONGODB_URI: mongodb://santea:santea_dev@admin-db:27017/santea_admin?authSource=admin
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: santea
+      RABBITMQ_PASSWORD: santea_dev
+    depends_on:
+      admin-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  nutrition-service:
+    build:
+      context: .
+      args:
+        SERVICE_MODULE: nutrition-service
+    environment:
+      SANTEA_SECURITY_JWT_SECRET: ${SANTEA_SECURITY_JWT_SECRET:?Définis SANTEA_SECURITY_JWT_SECRET avant de démarrer}
+      DATABASE_URL: jdbc:mysql://nutrition-db:3306/santea_nutrition
+      DATABASE_USER: santea
+      DATABASE_PASSWORD: santea_dev
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: santea
+      RABBITMQ_PASSWORD: santea_dev
+    depends_on:
+      nutrition-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  coach-service:
+    build:
+      context: .
+      args:
+        SERVICE_MODULE: coach-service
+    environment:
+      SANTEA_SECURITY_JWT_SECRET: ${SANTEA_SECURITY_JWT_SECRET:?Définis SANTEA_SECURITY_JWT_SECRET avant de démarrer}
+      DATABASE_URL: jdbc:mysql://coach-db:3306/santea_coach
+      DATABASE_USER: santea
+      DATABASE_PASSWORD: santea_dev
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: santea
+      RABBITMQ_PASSWORD: santea_dev
+    depends_on:
+      coach-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  notification-service:
+    build:
+      context: .
+      args:
+        SERVICE_MODULE: notification-service
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: santea
+      RABBITMQ_PASSWORD: santea_dev
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  api-gateway:
+    build:
+      context: .
+      args:
+        SERVICE_MODULE: api-gateway
+    environment:
+      PATIENT_SERVICE_URL: http://patient-service:8081
+      MEDECIN_SERVICE_URL: http://medecin-service:8082
+      PHARMACY_SERVICE_URL: http://pharmacy-service:8083
+      ADMIN_SERVICE_URL: http://admin-service:8084
+      NUTRITION_SERVICE_URL: http://nutrition-service:8085
+      COACH_SERVICE_URL: http://coach-service:8086
+    ports:
+      - "8088:8080"
+    depends_on:
+      - patient-service
+      - medecin-service
+      - pharmacy-service
+      - admin-service
+      - nutrition-service
+      - coach-service
+
+volumes:
+  patient-db-data:
+  medecin-db-data:
+  pharmacy-db-data:
+  nutrition-db-data:
+  coach-db-data:
+  admin-db-data:
+  rabbitmq-data:
